@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BTC DCA Strategy Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root{
+    --bg:#0d1117; --card:#161b22; --border:#30363d; --text:#e6edf3; --dim:#8b949e;
+    --green:#3fb950; --teal:#39d2c0; --yellow:#d29922; --orange:#f0883e; --red:#f85149; --blue:#58a6ff;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;padding:24px;max-width:1100px;margin:0 auto}
+  h1{font-size:20px;font-weight:600}
+  .sub{color:var(--dim);font-size:13px;margin-top:4px}
+  .grid{display:grid;gap:14px;margin-top:18px}
+  .g2{grid-template-columns:1fr 1fr}
+  .g4{grid-template-columns:repeat(4,1fr)}
+  @media(max-width:800px){.g4{grid-template-columns:1fr 1fr}.g2{grid-template-columns:1fr}}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px}
+  .label{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--dim);margin-bottom:6px}
+  .big{font-size:26px;font-weight:700}
+  .mid{font-size:15px;font-weight:600}
+  .dim{color:var(--dim);font-size:12px;margin-top:4px}
+  #action{display:flex;gap:24px;align-items:center;border-width:2px}
+  #mult{font-size:56px;font-weight:800;line-height:1}
+  .bar{height:8px;border-radius:4px;background:var(--border);margin-top:10px;position:relative;overflow:visible}
+  .bar>i{position:absolute;top:-3px;width:3px;height:14px;background:#fff;border-radius:2px}
+  .zones{display:flex;height:8px;border-radius:4px;overflow:hidden;margin-top:10px}
+  .zones>span{height:100%}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  td{padding:5px 4px;border-bottom:1px solid var(--border)}
+  td:last-child{text-align:right;font-variant-numeric:tabular-nums}
+  .ok{color:var(--green)} .warn{color:var(--orange)} .bad{color:var(--red)} .info{color:var(--blue)}
+  .rule{display:flex;gap:14px;align-items:center;border:1px solid var(--border);border-left-width:4px;border-radius:8px;padding:9px 14px;margin-top:8px;opacity:.45}
+  .rule.active{opacity:1;background:#1b2430}
+  .chip{font-weight:800;font-size:17px;min-width:54px;text-align:center;border-radius:6px;padding:7px 4px;background:#21262d;flex-shrink:0}
+  .rule.active .chip{color:#0d1117}
+  .rname{font-weight:600;font-size:13.5px}
+  .rdesc{color:var(--dim);font-size:11.5px;margin-top:1px}
+  .rtests{margin-left:auto;text-align:right;font-size:12px;font-variant-numeric:tabular-nums;flex-shrink:0;line-height:1.55}
+  .pass{color:var(--green)} .fail{color:var(--dim)}
+  .youare{font-size:10px;letter-spacing:.1em;font-weight:700;padding:3px 8px;border-radius:99px;margin-left:12px;color:#0d1117;flex-shrink:0}
+  @media(max-width:700px){.rtests{text-align:left;margin-left:0;flex-basis:100%}.rule{flex-wrap:wrap}}
+  #err{background:#3d1d1f;border:1px solid var(--red);border-radius:10px;padding:14px;margin-top:18px;display:none}
+  #loading{color:var(--dim);margin-top:18px}
+  details{margin-top:18px;color:var(--dim);font-size:13px}
+  summary{cursor:pointer;color:var(--text);font-weight:600;font-size:14px}
+  details table{margin-top:10px}
+  .guide{max-width:820px;line-height:1.65;font-size:13px}
+  .guide h3{color:var(--text);font-size:14px;margin:18px 0 6px}
+  .guide p{margin:8px 0}
+  .guide b{color:var(--text)}
+  .alert{background:#3d2a1d;border:1px solid var(--orange);border-radius:8px;padding:10px 14px;margin-top:12px;font-size:14px;display:none}
+  .alert.fire{background:#3d1d1f;border-color:var(--red)}
+  canvas{margin-top:8px}
+  footer{color:var(--dim);font-size:11px;margin-top:26px;line-height:1.6}
+</style>
+</head>
+<body>
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+    <a href="index.html" style="color:var(--dim);text-decoration:none;font-size:13px;border:1px solid var(--border);border-radius:8px;padding:7px 14px;background:var(--card)">← Back to home</a>
+    <a href="methodology.html" style="color:var(--dim);text-decoration:none;font-size:13px">Methodology</a>
+  </div>
+  <h1>₿ BTC DCA Strategy Dashboard</h1>
+  <div class="sub" id="asof">Loading…</div>
+
+  <div id="loading">Fetching ~6 years of daily candles from Coinbase…</div>
+  <div id="err"></div>
+
+  <div id="app" style="display:none">
+    <!-- THIS WEEK'S ACTION -->
+    <div class="grid">
+      <div class="card" id="action">
+        <div>
+          <div class="label">This week's DCA</div>
+          <div id="mult">–</div>
+        </div>
+        <div>
+          <div class="mid" id="why">–</div>
+          <div class="dim" id="reserve"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="label">How the multiplier is decided</div>
+        <div class="dim" style="margin-bottom:2px">From maximum buying (3×) down to paused (0×) — the first zone from the top where every condition is ✓ sets this week's multiplier.</div>
+        <div id="rules"></div>
+      </div>
+    </div>
+
+    <div class="alert" id="maniaAlert"></div>
+
+    <!-- INDICATORS -->
+    <div class="grid g4">
+      <div class="card">
+        <div class="label">Price vs 200W SMA</div>
+        <div class="big" id="v200w">–</div>
+        <div class="dim" id="d200w">–</div>
+      </div>
+      <div class="card">
+        <div class="label">Mayer Multiple</div>
+        <div class="big" id="vMayer">–</div>
+        <div class="zones">
+          <span style="flex:0.8;background:var(--green)"></span>
+          <span style="flex:0.6;background:#2d4a35"></span>
+          <span style="flex:0.25;background:var(--orange)"></span>
+          <span style="flex:0.75;background:var(--red)"></span>
+        </div>
+        <div class="bar" style="background:none;margin-top:-8px"><i id="mMark"></i></div>
+        <div class="dim">buy &lt;0.8 · reduce &gt;1.4 · pause &gt;1.65 · mania &gt;2.4</div>
+      </div>
+      <div class="card">
+        <div class="label">Bull Market Support Band</div>
+        <div class="big" id="vBmsb">–</div>
+        <div class="dim" id="dBmsb">–</div>
+      </div>
+      <div class="card">
+        <div class="label">Pi Cycle ratio</div>
+        <div class="big" id="vPi">–</div>
+        <div class="bar"><i id="piMark"></i></div>
+        <div class="dim">111D SMA ÷ 2×350D SMA · mania sell at 1.00</div>
+      </div>
+    </div>
+
+    <!-- MANIA + F&G -->
+    <div class="grid g2">
+      <div class="card">
+        <div class="label">Mania insurance (sell 10% each, once per cycle)</div>
+        <table id="mania"></table>
+        <div class="dim">Cycle flags reset when Mayer &lt; 0.8. State replayed from price history — nothing to track manually.</div>
+      </div>
+      <div class="card">
+        <div class="label">Fear &amp; Greed index (visual only — not used in rules)</div>
+        <div class="big" id="vFng">–</div>
+        <div class="zones">
+          <span style="flex:25;background:var(--red)"></span>
+          <span style="flex:20;background:var(--orange)"></span>
+          <span style="flex:10;background:var(--yellow)"></span>
+          <span style="flex:20;background:#7bc96f"></span>
+          <span style="flex:25;background:var(--green)"></span>
+        </div>
+        <div class="bar" style="background:none;margin-top:-8px"><i id="fngMark"></i></div>
+        <div class="dim" id="dFng">–</div>
+      </div>
+    </div>
+
+    <!-- CHART -->
+    <div class="card" style="margin-top:14px">
+      <div class="label">Price · 200W SMA · Bull Market Support Band (log scale)</div>
+      <canvas id="chart" height="110"></canvas>
+    </div>
+
+    <details>
+      <summary>Full strategy guide — how it works and why (for beginners)</summary>
+      <div class="guide">
+        <h3>The big idea</h3>
+        <p>This strategy is <b>dollar-cost averaging (DCA) with a volume knob</b>. Plain DCA means buying a fixed
+        amount every week no matter what — a great habit, because it removes emotion and timing. This tool keeps
+        that habit but turns the knob: <b>buy more when Bitcoin is historically cheap, less (or nothing) when it is
+        historically expensive</b>. It never predicts the future. It only measures where today's price sits
+        relative to Bitcoin's own long-term averages, and reacts. You decide on one fixed base amount
+        (say €100/week); the tool tells you each week whether to invest 0×, 0.5×, 1×, 1.5×, 2× or 3× that amount.</p>
+
+        <h3>The four measuring sticks</h3>
+        <p><b>1. The 200-week average ("the floor").</b> The average price of the last ~4 years — one full market
+        cycle. Because it moves so slowly, it acts as Bitcoin's long-term fair-value floor: every bear market since
+        2015 has bottomed almost exactly on it. When today's price touches this line, history says it's the best
+        buying opportunity a cycle offers. That's why it triggers the maximum 3×.</p>
+        <p><b>2. The Mayer Multiple ("the thermometer").</b> Today's price divided by the 200-<i>day</i> average.
+        It answers: how far has price strayed from its own recent normal? Around 1.0 = normal. Below 0.8 = price is
+        20%+ below normal (historically cheap → buy 2×). Above 1.40 = stretched (slow down → 0.5×). Above 1.65 =
+        very stretched (stop buying → 0×). Above 2.40 = mania (see selling, below). One instrument, read at
+        different temperatures.</p>
+        <p><b>3. The Bull Market Support Band ("the trampoline").</b> A band made of two ~5-month averages. During
+        healthy bull markets, price repeatedly dips to this band and bounces off it. A dip below the band while the
+        thermometer is still moderate is usually a discount inside an uptrend — worth buying at 1.5×.</p>
+        <p><b>4. The Pi Cycle ratio ("the mania detector").</b> A ratio of a fast average to a slow one. When the
+        fast one overtakes 2× the slow one, price has risen absurdly fast — this called the manic tops of 2013,
+        2017 and 2021 within days. It only matters for selling, never for buying.</p>
+
+        <h3>How the buying rules relate to each other</h3>
+        <p>The six rules are <b>not steps on one scale — they are different alarms watching different things</b>,
+        arranged by priority. The floor (3×) outranks the thermometer (2×), which outranks the trampoline (1.5×).
+        The overheat readings (0.5×, 0×) come from the thermometer's hot end and can never be true at the same time
+        as its cold end. In deep bear markets several buy alarms ring at once — price sits on the floor AND is cheap
+        AND is under the band. That's normal and the dashboard marks the losers "also true, but outranked": the
+        strategy simply acts on the strongest signal. In quiet times no alarm rings and you buy the normal 1×.
+        Historically that's the single most common week — about 43% of the last four years.</p>
+
+        <h3>Selling: two rare "mania insurance" rules</h3>
+        <p>Backtesting showed that frequent profit-taking <b>destroys</b> value for a long-term accumulator — every
+        sell level low enough to catch modern, calmer market tops also fires during ordinary rallies, selling coins
+        that should have been kept. So this strategy sells in exactly two situations, both extreme: <b>Mayer above
+        2.40</b>, or the <b>Pi Cycle lines crossing</b>. Each triggers a sale of just 10% of holdings, once per
+        cycle (they re-arm only after the market has fully cooled down, Mayer &lt; 0.8). These levels were reached in
+        2013, 2017 and 2021 — but not in the 2025 cycle, and as Bitcoin matures they may never be reached again.
+        That's fine: the rules then simply never fire and cost nothing. They exist as insurance in case Bitcoin has
+        one more mania in it.</p>
+        <p>If a sale does happen, the cash isn't profit to spend — it's a <b>reserve waiting to buy back cheaper</b>:
+        deploy 25% of it per week whenever price is at the floor, or 10% per week while Mayer &lt; 0.8.</p>
+
+        <h3>What to expect in practice</h3>
+        <p>Most weeks are boring — that's by design. The strategy earns its edge in the uncomfortable moments: it
+        demands <b>3× your base amount for months on end during bear markets</b>, exactly when the news is worst
+        (in 2022–23 the 3× zone lasted over half a year). Choose a base amount where 3× is comfortably affordable —
+        an abandoned plan is worse than a modest one. Expect brutal interim drawdowns: in the backtest the
+        portfolio fell ~78% from its peak before recovering; holding through that is the price of the returns.
+        Over 2014–2026 this ruleset accumulated roughly 60% more Bitcoin per euro invested than plain DCA — but
+        that rests on only four market cycles of history, and no rule based on the past is guaranteed a future.
+        This is a decision aid, not financial advice.</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>Does it actually work? Two full-cycle comparisons vs plain DCA</summary>
+      <div class="guide">
+        <p>Backtest of these exact rules over two consecutive 4-year cycles, $100/week base, vs buying a flat
+        $100 every week. The key question for any doubter: <b>doesn't the extra BTC come simply from investing
+        more money?</b> Row 3 answers it.</p>
+
+        <h3>2021 cycle (Jul 2018 → Jul 2022) — a cycle with a mania phase</h3>
+        <table>
+          <tr><td></td><td><b>Strategy</b></td><td><b>Plain DCA</b></td><td><b>Difference</b></td></tr>
+          <tr><td>Money invested</td><td>$25,300</td><td>$20,900</td><td class="info">+21%</td></tr>
+          <tr><td>BTC accumulated</td><td>3.052</td><td>1.996</td><td class="ok">+53%</td></tr>
+          <tr><td>BTC growth vs money growth</td><td colspan="2">+53% BTC for +21% money</td><td class="ok">+26% more BTC per dollar</td></tr>
+          <tr><td>Avg cost per BTC</td><td>$8,290</td><td>$10,469</td><td class="ok">−21%</td></tr>
+        </table>
+        <p><b>Takeaway:</b> in a manic cycle the sell rules earn their keep — mania insurance sold 10% three days
+        after the exact top ($63,446) and re-bought lower, so every dollar invested bought 26% more Bitcoin than
+        plain DCA.</p>
+
+        <h3>2025 cycle (Jul 2022 → Jul 2026) — a calm cycle, no mania</h3>
+        <table>
+          <tr><td></td><td><b>Strategy</b></td><td><b>Plain DCA</b></td><td><b>Difference</b></td></tr>
+          <tr><td>Money invested</td><td>$33,450</td><td>$20,900</td><td class="info">+60%</td></tr>
+          <tr><td>BTC accumulated</td><td>0.979</td><td>0.487</td><td class="ok">+101%</td></tr>
+          <tr><td>BTC growth vs money growth</td><td colspan="2">+101% BTC for +60% money</td><td class="ok">+26% more BTC per dollar</td></tr>
+          <tr><td>Avg cost per BTC</td><td>$34,168</td><td>$42,891</td><td class="ok">−20%</td></tr>
+        </table>
+        <p><b>Takeaway:</b> in a calm cycle the sell rules never fired and the buy ladder alone did the work —
+        60% more money became 101% more BTC, again 26% more Bitcoin per dollar.</p>
+
+        <p>Two completely different cycles, the same per-dollar edge (+26%), with zero tuning between them.
+        Notes for honesty: the strategy deliberately invests more than plain DCA — mostly during bear markets,
+        so it requires spare cash exactly when markets feel worst; and two cycles is a small sample.
+        Past results never guarantee future ones.</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>Strategy rules reference</summary>
+      <table>
+        <tr><td>Price ≤ 1.05 × 200W SMA</td><td class="ok">DCA 3×</td></tr>
+        <tr><td>Mayer &lt; 0.8</td><td class="ok">DCA 2×</td></tr>
+        <tr><td>Below BMSB and Mayer &lt; 1.2</td><td class="ok">DCA 1.5×</td></tr>
+        <tr><td>Neutral</td><td>DCA 1×</td></tr>
+        <tr><td>Mayer &gt; 1.40</td><td class="warn">DCA 0.5×</td></tr>
+        <tr><td>Mayer &gt; 1.65</td><td class="bad">DCA 0× (pause, hold cash)</td></tr>
+        <tr><td>Mayer &gt; 2.40 (once per cycle)</td><td class="bad">Sell 10%</td></tr>
+        <tr><td>Pi ratio crosses 1.00 (once per cycle)</td><td class="bad">Sell 10%</td></tr>
+        <tr><td>Reserve + price ≤ 1.05 × 200W SMA</td><td class="info">Deploy 25% of reserve / week</td></tr>
+        <tr><td>Reserve + Mayer &lt; 0.8</td><td class="info">Deploy 10% of reserve / week</td></tr>
+      </table>
+      <p style="margin-top:10px">Decisions are weekly (Mondays), using the previous day's closing indicators — identical to the backtest (2014–2026: 62.5× vs 42.7× plain DCA; max drawdown −78.3% vs −83.5%).</p>
+    </details>
+
+    <footer>
+      Data: Coinbase Exchange daily candles (Binance fallback) · Fear &amp; Greed: alternative.me ·
+      Refresh the page to update. This is a decision aid based on backtested historical patterns
+      (4 market cycles — a small sample). Not financial advice. Cycle dampening may make sell
+      signals permanently silent; that is by design.
+    </footer>
+  </div>
+
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const fmt$ = x => "$" + Math.round(x).toLocaleString("en-US");
+const DAYS_NEEDED = 2300;
+
+/* ---------- indicator math (verified against Python backtest) ---------- */
+function rollingSMA(values, n) {
+  const out = new Array(values.length).fill(NaN);
+  let sum = 0;
+  for (let i = 0; i < values.length; i++) {
+    sum += values[i];
+    if (i >= n) sum -= values[i - n];
+    if (i >= n - 1) out[i] = sum / n;
+  }
+  return out;
+}
+function weeklyCloses(days) {
+  const out = [];
+  for (const d of days) if (new Date(d.t).getUTCDay() === 0) out.push({ t: d.t, c: d.c });
+  return out;
+}
+function computeIndicators(days) {
+  const closes = days.map(d => d.c);
+  const sma200d = rollingSMA(closes, 200);
+  const sma200w = rollingSMA(closes, 1400);
+  const sma111 = rollingSMA(closes, 111);
+  const sma350 = rollingSMA(closes, 350);
+  const mayer = closes.map((c, i) => c / sma200d[i]);
+  const pi = closes.map((_, i) => sma111[i] / (2 * sma350[i]));
+  const wk = weeklyCloses(days);
+  const wSMA = rollingSMA(wk.map(w => w.c), 20);
+  const wEMA = new Array(wk.length).fill(NaN);
+  const k = 2 / 22;
+  for (let i = 0; i < wk.length; i++)
+    wEMA[i] = i === 0 ? wk[i].c : wk[i].c * k + wEMA[i - 1] * (1 - k);
+  const bLow = new Array(days.length).fill(NaN), bHigh = new Array(days.length).fill(NaN);
+  let wi = -1;
+  for (let i = 0; i < days.length; i++) {
+    while (wi + 1 < wk.length && wk[wi + 1].t <= days[i].t) wi++;
+    if (wi >= 0 && !isNaN(wSMA[wi])) {
+      bLow[i] = Math.min(wSMA[wi], wEMA[wi]);
+      bHigh[i] = Math.max(wSMA[wi], wEMA[wi]);
+    }
+  }
+  return { closes, sma200d, sma200w, sma111, sma350, mayer, pi, bLow, bHigh };
+}
+function dcaMultiplier(price, m, s200w, bLow) {
+  if (price <= 1.05 * s200w) return [3.0, "Price at the 200W SMA — generational accumulation zone"];
+  if (m < 0.8) return [2.0, "Mayer < 0.8 — accumulation zone"];
+  if (m > 1.65) return [0.0, "Mayer > 1.65 — very overheated: DCA paused, hold the cash"];
+  if (m > 1.40) return [0.5, "Mayer > 1.40 — overheated: DCA reduced"];
+  if (price < bLow && m < 1.2) return [1.5, "Below Bull Market Support Band with neutral Mayer — dip buying"];
+  return [1.0, "Neutral — normal DCA"];
+}
+function replayFlags(ind) {
+  let firedMayer = false, firedPi = false, prevPi = NaN;
+  for (let i = 1; i < ind.closes.length; i++) {
+    const m = ind.mayer[i - 1], piv = ind.pi[i - 1];
+    if (isNaN(m)) continue;
+    if (m < 0.8) { firedMayer = false; firedPi = false; }
+    if (m > 2.4 && !firedMayer) firedMayer = true;
+    if (!isNaN(prevPi) && prevPi <= 1.0 && piv > 1.0 && !firedPi) firedPi = true;
+    if (!isNaN(piv)) prevPi = piv;
+  }
+  return { firedMayer, firedPi };
+}
+
+/* ---------- data fetching ---------- */
+async function fetchCoinbase() {
+  const day = 86400000, now = Date.now();
+  const start = now - DAYS_NEEDED * day;
+  const map = new Map();
+  for (let a = start; a < now; a += 300 * day) {
+    const b = Math.min(a + 300 * day, now + day);
+    const url = "https://api.exchange.coinbase.com/products/BTC-USD/candles?granularity=86400" +
+      "&start=" + new Date(a).toISOString() + "&end=" + new Date(b).toISOString();
+    const r = await fetch(url);
+    if (!r.ok) throw new Error("Coinbase HTTP " + r.status);
+    for (const c of await r.json()) map.set(c[0] * 1000, c[4]); // [time, low, high, open, close, vol]
+  }
+  return [...map.entries()].sort((x, y) => x[0] - y[0]).map(([t, c]) => ({ t, c }));
+}
+async function fetchBinance() {
+  const map = new Map();
+  let end = Date.now();
+  for (let i = 0; i < 3; i++) {
+    const r = await fetch("https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1d&limit=1000&endTime=" + end);
+    if (!r.ok) throw new Error("Binance HTTP " + r.status);
+    const rows = await r.json();
+    if (!rows.length) break;
+    for (const k of rows) map.set(k[0], parseFloat(k[4]));
+    end = rows[0][0] - 1;
+  }
+  return [...map.entries()].sort((x, y) => x[0] - y[0]).map(([t, c]) => ({ t, c }));
+}
+async function fetchFng() {
+  try {
+    const r = await fetch("https://api.alternative.me/fng/?limit=1");
+    const j = await r.json();
+    return { v: +j.data[0].value, label: j.data[0].value_classification };
+  } catch (e) { return null; }
+}
+
+/* ---------- render ---------- */
+function render(days, source, fng) {
+  const ind = computeIndicators(days);
+  const i = days.length - 1, li = i - 1;
+  const price = days[i].c;
+  const m = ind.mayer[li], s200w = ind.sma200w[li], s200d = ind.sma200d[li];
+  const bLow = ind.bLow[li], bHigh = ind.bHigh[li], pi = ind.pi[li];
+  const flags = replayFlags(ind);
+
+  $("asof").textContent = "BTC " + fmt$(price) + " · " + new Date(days[i].t).toISOString().slice(0, 10) +
+    " · data: " + source + " (" + days.length + " days) · refresh page to update";
+
+  // action card
+  const [mult, why] = dcaMultiplier(price, m, s200w, bLow);
+  $("mult").textContent = mult + "×";
+  const col = mult >= 2 ? "var(--green)" : mult >= 1.5 ? "var(--teal)" : mult >= 1 ? "var(--blue)"
+    : mult > 0 ? "var(--orange)" : "var(--red)";
+  $("mult").style.color = col;
+  $("action").style.borderColor = col;
+  $("why").textContent = why;
+  $("reserve").textContent =
+    price <= 1.05 * s200w ? "Holding USD reserve from past sells? Deploy 25% of it this week." :
+    m < 0.8 ? "Holding USD reserve from past sells? Deploy 10% of it this week." :
+    "No reserve deployment signal this week.";
+
+  // mania alert
+  const alerts = [];
+  if (m > 2.4 && !flags.firedMayer) alerts.push("Mayer > 2.4 — MANIA: sell 10% now.");
+  if (pi > 1.0 && !flags.firedPi) alerts.push("Pi Cycle crossed — MANIA: sell 10% now.");
+  if (alerts.length) {
+    $("maniaAlert").style.display = "block";
+    $("maniaAlert").className = "alert fire";
+    $("maniaAlert").textContent = "🚨 " + alerts.join("  ");
+  }
+
+  // decision cascade — same conditions and order as dcaMultiplier()
+  const mTxt = "Mayer " + m.toFixed(2);
+  const rules = [
+    { mult: "3×", color: "var(--green)", name: "Price at the 200-week average — the historic cycle floor",
+      desc: "Every bear market since 2015 bottomed here. Buy maximum.",
+      tests: [[price <= 1.05 * s200w, fmt$(price) + " ≤ " + fmt$(1.05 * s200w) + " (200W SMA +5%)"]] },
+    { mult: "2×", color: "var(--green)", name: "Accumulation zone — price well below its 200-day average",
+      desc: "Mayer below 0.8 means price is 20%+ under its own 200-day average.",
+      tests: [[m < 0.8, mTxt + " < 0.8"]] },
+    { mult: "1.5×", color: "var(--teal)", name: "Dip below the Bull Market Support Band",
+      desc: "A pullback under the 20W/21W band while Mayer is still moderate.",
+      tests: [[price < bLow, fmt$(price) + " < " + fmt$(bLow) + " (band low)"],
+              [m < 1.2, mTxt + " < 1.2"]] },
+    { mult: "1×", color: "var(--blue)", name: "Neutral — nothing special is happening",
+      desc: "No buy zone and no overheated zone applies: invest the normal base amount.",
+      tests: [[mult === 1.0, "no other zone active"]] },
+    { mult: "0.5×", color: "var(--orange)", name: "Overheated — buy less",
+      desc: "Price is stretched far above its 200-day average, but not yet extreme.",
+      tests: [[m > 1.40 && m <= 1.65, mTxt + " is between 1.40 and 1.65"]] },
+    { mult: "0×", color: "var(--red)", name: "Very overheated — pause buying, hold the cash",
+      desc: "The most expensive buys in 12 years of data happened here.",
+      tests: [[m > 1.65, mTxt + " > 1.65"]] },
+  ];
+  let activeIdx = rules.findIndex(r => parseFloat(r.mult) === mult);
+  $("rules").innerHTML = rules.map((r, idx) => {
+    const active = idx === activeIdx;
+    const fullPass = r.tests.every(t => t[0]);
+    const outranked = !active && fullPass;
+    return `<div class="rule${active ? " active" : ""}" style="border-left-color:${active ? r.color : "var(--border)"}">
+      <div class="chip" style="${active ? "background:" + r.color : ""}">${r.mult}</div>
+      <div><div class="rname">${r.name}</div><div class="rdesc">${r.desc}</div></div>
+      <div class="rtests">${r.tests.map(t =>
+        `<div class="${t[0] ? "pass" : "fail"}">${t[0] ? "✓" : "✗"} ${t[1]}</div>`).join("")}
+        ${outranked ? `<div class="fail">→ also true, but ${rules[activeIdx].mult} wins (higher priority)</div>` : ""}</div>
+      ${active ? `<div class="youare" style="background:${r.color}">THIS WEEK</div>` : ""}
+    </div>`;
+  }).join("");
+
+  // indicator cards
+  const p200 = (price / s200w - 1) * 100;
+  $("v200w").textContent = fmt$(s200w);
+  $("d200w").textContent = "price is " + (p200 >= 0 ? "+" : "") + p200.toFixed(1) + "% vs 200W SMA" +
+    (price <= 1.05 * s200w ? " — historic buy zone" : "");
+  $("vMayer").textContent = m.toFixed(2);
+  $("mMark").style.left = Math.min(98, m / 2.4 * 100) + "%";
+  $("vBmsb").textContent = fmt$(bLow) + "–" + fmt$(bHigh);
+  $("dBmsb").textContent = price > bHigh ? "price above the band (bull trend intact)" :
+    price < bLow ? "price below the band (weak / bear trend)" : "price inside the band";
+  $("vPi").textContent = pi.toFixed(3);
+  $("piMark").style.left = Math.min(98, pi * 100) + "%";
+
+  // mania table
+  $("mania").innerHTML =
+    `<tr><td>Mayer > 2.40 (now ${m.toFixed(2)})</td><td class="${flags.firedMayer ? 'dim' : 'ok'}">${flags.firedMayer ? "already fired this cycle" : "armed"}</td></tr>` +
+    `<tr><td>Pi ratio crosses 1.00 (now ${pi.toFixed(3)})</td><td class="${flags.firedPi ? 'dim' : 'ok'}">${flags.firedPi ? "already fired this cycle" : "armed"}</td></tr>`;
+
+  // fear & greed
+  if (fng) {
+    $("vFng").textContent = fng.v + " · " + fng.label;
+    $("fngMark").style.left = Math.min(98, fng.v) + "%";
+    $("dFng").textContent = "0 = extreme fear · 100 = extreme greed";
+  } else {
+    $("vFng").textContent = "unavailable";
+  }
+
+  // chart (last ~800 days)
+  const w = Math.max(0, days.length - 800);
+  const lbl = days.slice(w).map(d => new Date(d.t).toISOString().slice(0, 10));
+  const ds = (data, label, color, dash) => ({
+    label, data: data.slice(w), borderColor: color, borderWidth: 1.5,
+    borderDash: dash || [], pointRadius: 0, tension: 0, spanGaps: true
+  });
+  new Chart($("chart"), {
+    type: "line",
+    data: { labels: lbl, datasets: [
+      ds(ind.closes, "Price", "#e6edf3"),
+      ds(ind.sma200w, "200W SMA", "#3fb950"),
+      ds(ind.bLow, "BMSB low", "#d29922", [4, 4]),
+      ds(ind.bHigh, "BMSB high", "#f0883e", [4, 4]),
+    ]},
+    options: {
+      animation: false, interaction: { mode: "index", intersect: false },
+      scales: {
+        y: { type: "logarithmic", grid: { color: "#21262d" }, ticks: { color: "#8b949e", callback: v => "$" + v.toLocaleString() } },
+        x: { grid: { display: false }, ticks: { color: "#8b949e", maxTicksLimit: 8, maxRotation: 0 } }
+      },
+      plugins: { legend: { labels: { color: "#8b949e", boxWidth: 18 } } }
+    }
+  });
+}
+
+(async () => {
+  const fngP = fetchFng();
+  let days, source;
+  try { days = await fetchCoinbase(); source = "Coinbase"; }
+  catch (e1) {
+    try { days = await fetchBinance(); source = "Binance (USDT)"; }
+    catch (e2) {
+      $("loading").style.display = "none";
+      $("err").style.display = "block";
+      $("err").textContent = "Could not fetch price data (Coinbase: " + e1.message +
+        " · Binance: " + e2.message + "). Check your internet connection and refresh.";
+      return;
+    }
+  }
+  if (days.length < 1402) {
+    $("err").style.display = "block";
+    $("err").textContent = "Only " + days.length + " days of data received — the 200W SMA needs 1400. Try refreshing.";
+  }
+  $("loading").style.display = "none";
+  $("app").style.display = "block";
+  render(days, source, await fngP);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DCA Compass — a smarter rhythm for stacking Bitcoin</title>
+<meta name="description" content="A free, transparent, educational tool that turns four classic Bitcoin indicators into one weekly DCA multiplier. No signup, no advice, no custody — just open rules you can verify.">
+<style>
+  :root{
+    --bg:#0d1117; --card:#161b22; --border:#30363d; --text:#e6edf3; --dim:#8b949e;
+    --green:#3fb950; --teal:#39d2c0; --orange:#f0883e; --red:#f85149; --blue:#58a6ff;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;line-height:1.65}
+  .wrap{max-width:880px;margin:0 auto;padding:24px}
+  nav{display:flex;justify-content:space-between;align-items:center;padding:18px 0}
+  nav .logo{font-weight:700;font-size:17px}
+  nav a{color:var(--dim);text-decoration:none;font-size:14px;margin-left:18px}
+  nav a:hover{color:var(--text)}
+  .hero{text-align:center;padding:56px 0 40px}
+  .hero h1{font-size:38px;line-height:1.2;font-weight:800;max-width:640px;margin:0 auto}
+  .hero p{color:var(--dim);font-size:17px;max-width:560px;margin:18px auto 0}
+  .cta{display:inline-block;background:var(--green);color:#0d1117;font-weight:700;font-size:16px;padding:14px 28px;border-radius:10px;text-decoration:none;margin-top:28px}
+  .cta:hover{opacity:.9}
+  .sub-cta{display:block;color:var(--dim);font-size:12px;margin-top:10px}
+  h2{font-size:22px;margin:56px 0 14px}
+  p.body{color:var(--dim);font-size:15px;margin:10px 0}
+  p.body b{color:var(--text)}
+  .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:20px}
+  @media(max-width:760px){.cards{grid-template-columns:1fr}.hero h1{font-size:28px}}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:18px}
+  .card h3{font-size:15px;margin-bottom:6px}
+  .card p{color:var(--dim);font-size:13px}
+  .ladder{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:6px 18px;margin-top:20px}
+  .lrow{display:flex;align-items:center;gap:14px;padding:11px 0;border-bottom:1px solid var(--border);font-size:14px}
+  .lrow:last-child{border-bottom:none}
+  .chip{font-weight:800;min-width:48px;text-align:center;border-radius:6px;padding:5px 4px;background:#21262d;font-size:15px}
+  .lrow span.cond{color:var(--dim);font-size:13px;margin-left:auto;text-align:right}
+  table{width:100%;border-collapse:collapse;font-size:14px;margin-top:16px}
+  td,th{padding:9px 8px;border-bottom:1px solid var(--border);text-align:left}
+  td:not(:first-child),th:not(:first-child){text-align:right;font-variant-numeric:tabular-nums}
+  .ok{color:var(--green)}
+  .note{background:#1c2128;border:1px solid var(--border);border-left:4px solid var(--orange);border-radius:8px;padding:14px 16px;font-size:13px;color:var(--dim);margin-top:18px}
+  .note b{color:var(--text)}
+  details{margin-top:10px;border:1px solid var(--border);border-radius:8px;padding:12px 16px;background:var(--card)}
+  summary{cursor:pointer;font-weight:600;font-size:14px}
+  details p{color:var(--dim);font-size:13.5px;margin-top:8px}
+  footer{border-top:1px solid var(--border);margin-top:64px;padding:24px 0;color:var(--dim);font-size:12px;line-height:1.7}
+  footer a{color:var(--dim)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <nav>
+    <div class="logo">🧭 DCA Compass</div>
+    <div>
+      <a href="tool.html">Dashboard</a>
+      <a href="methodology.html">Methodology</a>
+      <a href="methodology.html#disclaimer">Disclaimer</a>
+    </div>
+  </nav>
+
+  <div class="hero">
+    <h1>Same weekly Bitcoin habit.<br>A smarter rhythm.</h1>
+    <p>DCA Compass is a free, educational tool that reads four classic Bitcoin indicators and shows what a
+    rules-based weekly DCA plan would do right now — buy more, buy normally, or pause. Open rules,
+    verifiable backtests, no account, no tracking, nothing to install.</p>
+    <a class="cta" href="tool.html">Open the dashboard →</a>
+    <span class="sub-cta">Free forever · runs entirely in your browser · your data never leaves your device</span>
+  </div>
+
+  <h2>The idea in one paragraph</h2>
+  <p class="body">Dollar-cost averaging — buying a fixed amount every week — is already one of the best
+  strategies for long-term accumulators, because it removes emotion and timing. DCA Compass keeps that habit
+  and adds a <b>volume knob</b>: when Bitcoin trades at levels that history marks as unusually cheap (at its
+  200-week average, deep below its 200-day average), the rules say buy 2–3× your base amount; when it's
+  historically stretched, they say slow down or pause. It never predicts. It only measures where today's price
+  sits relative to Bitcoin's own long-term averages — and shows you exactly why, with every number visible.</p>
+
+  <h2>What you see when you open it</h2>
+  <div class="cards">
+    <div class="card"><h3>One number for this week</h3>
+      <p>A single multiplier from 0× to 3×, decided by six transparent rules. Every rule shows its live values
+      and a ✓ or ✗ — you can check the logic yourself in ten seconds.</p></div>
+    <div class="card"><h3>Four classic indicators</h3>
+      <p>The 200-week moving average, the Mayer Multiple, the Bull Market Support Band, and the Pi Cycle ratio —
+      each explained in plain language, with a beginner's guide built in.</p></div>
+    <div class="card"><h3>Rare "mania insurance"</h3>
+      <p>Two sell rules that only trigger at historic extremes (reached in 2013, 2017 and 2021 — never since).
+      If markets stay calm, they never fire and cost nothing.</p></div>
+  </div>
+
+  <h2>The ladder</h2>
+  <div class="ladder">
+    <div class="lrow"><span class="chip" style="color:var(--green)">3×</span> Crisis — price at the 200-week average, the historic cycle floor <span class="cond">price ≤ 1.05 × 200W SMA</span></div>
+    <div class="lrow"><span class="chip" style="color:var(--green)">2×</span> Accumulation — price 20%+ below its own 200-day average <span class="cond">Mayer &lt; 0.8</span></div>
+    <div class="lrow"><span class="chip" style="color:var(--teal)">1.5×</span> Dip below the Bull Market Support Band <span class="cond">below band, Mayer &lt; 1.2</span></div>
+    <div class="lrow"><span class="chip" style="color:var(--blue)">1×</span> Neutral — the most common week <span class="cond">no zone active</span></div>
+    <div class="lrow"><span class="chip" style="color:var(--orange)">0.5×</span> Overheated — buy less <span class="cond">Mayer 1.40–1.65</span></div>
+    <div class="lrow"><span class="chip" style="color:var(--red)">0×</span> Very overheated — pause, hold the cash <span class="cond">Mayer &gt; 1.65</span></div>
+  </div>
+
+  <h2>What the rules did in the past</h2>
+  <p class="body">We simulated these exact rules against full Bitcoin history and compared them with plain
+  fixed-amount DCA. The question that matters: does each invested dollar buy more Bitcoin? Historically, yes —
+  and consistently across two very different cycles:</p>
+  <table>
+    <tr><th></th><th>Money invested vs plain DCA</th><th>BTC accumulated vs plain DCA</th><th>BTC per dollar</th></tr>
+    <tr><td>2021 cycle (2018–2022)</td><td>+21%</td><td class="ok">+53%</td><td class="ok">+26%</td></tr>
+    <tr><td>2025 cycle (2022–2026)</td><td>+60%</td><td class="ok">+101%</td><td class="ok">+26%</td></tr>
+  </table>
+  <div class="note"><b>Read this before the table impresses you.</b> These are historical simulations, not
+  returns anyone earned, and Bitcoin has had only four full market cycles — a tiny sample. Rules fitted to the
+  past can stop working at any time. The strategy also deliberately invests <i>more</i> than plain DCA, mostly
+  during bear markets, which requires spare cash exactly when markets feel worst. Full methodology, including
+  the sell strategies we tested that <i>destroyed</i> value, is published openly on the
+  <a href="methodology.html" style="color:var(--text)">methodology page</a>. Past performance never guarantees
+  future results.</div>
+
+  <h2>Questions people ask</h2>
+  <details><summary>Is this financial advice?</summary>
+    <p>No. DCA Compass is an educational tool that shows what a fixed, published set of rules would do. It knows
+    nothing about you, your finances, or your goals, and it never tells you what <i>you</i> should do. Whether
+    and how much to invest is entirely your decision — ideally one you'd discuss with a qualified advisor.</p></details>
+  <details><summary>Why does it almost never sell?</summary>
+    <p>Because we tested selling, honestly, and it failed: every profit-taking threshold low enough to trigger in
+    modern, calmer cycles also fired during ordinary rallies, selling coins that should have been kept. Only
+    extreme "mania" levels historically marked true tops, so those are the only sell triggers left — and they may
+    never fire again. The full negative results are on the methodology page.</p></details>
+  <details><summary>Where does the data come from?</summary>
+    <p>Your own browser fetches daily prices directly from Coinbase (with a Binance fallback) every time you open
+    the page. There's no server in between, no account, and no tracking — the tool is a single self-contained
+    page.</p></details>
+  <details><summary>Why is it free?</summary>
+    <p>The rules only have value if they're transparent, and transparency means anyone can rebuild them anyway.
+    If enough people find it useful, optional extras like weekly signal alerts may come later — the dashboard
+    itself stays free.</p></details>
+  <details><summary>Does this work for other assets?</summary>
+    <p>The architecture does, but the thresholds don't transfer — they must be recalibrated to each asset's own
+    history, and calmer assets have far less mispricing to harvest. We've calibrated a world-equity-ETF version;
+    its honest backtested edge is small (~+1.3% per euro vs plain DCA), exactly as theory predicts.</p></details>
+
+  <div style="text-align:center;margin-top:48px">
+    <a class="cta" href="tool.html">Open the dashboard →</a>
+  </div>
+
+  <footer>
+    <b>Disclaimer.</b> DCA Compass is an educational and informational tool. It does not provide investment
+    advice, portfolio management, or personal recommendations of any kind. All figures shown are historical
+    simulations based on a small sample of market history; past performance does not guarantee future results.
+    Cryptocurrency is a volatile asset class — its value can fall dramatically, and you may lose the money you
+    invest. Never invest money you cannot afford to lose. Consult a qualified financial advisor before making
+    investment decisions. <a href="methodology.html">Methodology & full disclaimer</a>.
+  </footer>
+
+</div>
+</body>
+</html>

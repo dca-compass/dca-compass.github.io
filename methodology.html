@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Methodology & Disclaimer — DCA Compass</title>
+<style>
+  :root{--bg:#0d1117;--card:#161b22;--border:#30363d;--text:#e6edf3;--dim:#8b949e;
+    --green:#3fb950;--orange:#f0883e;--red:#f85149;--blue:#58a6ff}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;line-height:1.7}
+  .wrap{max-width:760px;margin:0 auto;padding:24px}
+  nav{display:flex;justify-content:space-between;align-items:center;padding:18px 0}
+  nav .logo{font-weight:700;font-size:17px}
+  nav a{color:var(--dim);text-decoration:none;font-size:14px;margin-left:18px}
+  h1{font-size:28px;margin:24px 0 8px}
+  h2{font-size:19px;margin:36px 0 10px}
+  p,li{color:var(--dim);font-size:14.5px;margin:9px 0}
+  p b, li b{color:var(--text)}
+  ul{margin-left:20px}
+  table{width:100%;border-collapse:collapse;font-size:13.5px;margin:14px 0}
+  td,th{padding:8px;border-bottom:1px solid var(--border);text-align:left;color:var(--dim)}
+  th{color:var(--text)}
+  td:not(:first-child),th:not(:first-child){text-align:right;font-variant-numeric:tabular-nums}
+  .ok{color:var(--green)} .bad{color:var(--red)}
+  code{background:var(--card);border:1px solid var(--border);border-radius:4px;padding:1px 6px;font-size:13px}
+  .box{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px 18px;margin:14px 0}
+  footer{border-top:1px solid var(--border);margin-top:56px;padding:24px 0;color:var(--dim);font-size:12px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <nav>
+    <div class="logo">🧭 DCA Compass</div>
+    <div><a href="index.html">Home</a><a href="tool.html">Dashboard</a></div>
+  </nav>
+
+  <h1>Methodology</h1>
+  <p>Everything below is published so you can verify, criticize, or rebuild the strategy yourself. If you find
+  an error, we want to know about it.</p>
+
+  <h2>Data</h2>
+  <p>Historical research used CoinMetrics community data (daily BTC-USD reference rates from July 2010) spliced
+  with Coinbase Exchange daily candles for recent periods. The live dashboard fetches ~6.3 years of daily candles
+  directly from Coinbase (Binance as fallback) in your browser on every page load; nothing is proxied or stored.
+  All series are calendar-daily. Indicator windows are calendar days (200-week SMA = 1,400 daily closes).</p>
+
+  <h2>Indicators</h2>
+  <ul>
+    <li><b>200-week simple moving average</b> — mean of the last 1,400 daily closes. Historically the deepest
+    bear-market lows (2015, 2018, 2020, 2022, 2026) occurred at or near this line.</li>
+    <li><b>Mayer Multiple</b> — price ÷ 200-day SMA.</li>
+    <li><b>Bull Market Support Band</b> — the band between the 20-week SMA and 21-week EMA of weekly
+    (Sunday) closes.</li>
+    <li><b>Pi Cycle ratio</b> — 111-day SMA ÷ (2 × 350-day SMA). The classic "Pi Cycle Top" is this ratio
+    crossing 1.0; it marked the 2013, 2017 and 2021 tops within days and has not crossed since.</li>
+  </ul>
+
+  <h2>The rules (complete specification)</h2>
+  <p>Decisions are weekly, on Mondays, always using the <b>previous day's</b> indicator values (no lookahead).
+  The first matching rule sets the week's DCA multiplier:</p>
+  <table>
+    <tr><th>Priority</th><th>Condition</th><th>Action</th></tr>
+    <tr><td>1</td><td>price ≤ 1.05 × 200W SMA</td><td>buy 3× base</td></tr>
+    <tr><td>2</td><td>Mayer &lt; 0.8</td><td>buy 2× base</td></tr>
+    <tr><td>3</td><td>Mayer &gt; 1.65</td><td>buy 0× (pause)</td></tr>
+    <tr><td>4</td><td>Mayer &gt; 1.40</td><td>buy 0.5× base</td></tr>
+    <tr><td>5</td><td>price &lt; BMSB lower band and Mayer &lt; 1.2</td><td>buy 1.5× base</td></tr>
+    <tr><td>6</td><td>otherwise</td><td>buy 1× base</td></tr>
+  </table>
+  <p><b>Mania insurance (sell rules)</b>, each firing at most once per cycle, re-armed when Mayer &lt; 0.8:
+  Mayer crossing above 2.40 → sell 10% of holdings; Pi Cycle ratio crossing above 1.00 → sell 10%. Proceeds are
+  held as a cash reserve and redeployed at 25% of the reserve per week while price ≤ 1.05 × 200W SMA, or 10% per
+  week while Mayer &lt; 0.8.</p>
+
+  <h2>Backtest protocol</h2>
+  <p>Simulation period June 2014 – July 2026 (constrained by the 200W SMA needing 1,400 days of prior data).
+  $100/week base amount. The benchmark is plain DCA: $100 every Monday, never selling. No fees, spreads, or
+  taxes are modeled — real-world results would be lower for both strategies, and slightly more so for the
+  strategy (it trades marginally more). All code paths use lagged indicators; indicator math was independently
+  verified in two implementations (Python and JavaScript) to the cent.</p>
+
+  <h2>Results</h2>
+  <table>
+    <tr><th></th><th>Strategy</th><th>Plain DCA</th></tr>
+    <tr><td>Total invested (2014–2026)</td><td>$83,300</td><td>$63,300</td></tr>
+    <tr><td>BTC accumulated</td><td>80.6</td><td>41.8</td></tr>
+    <tr><td>Value multiple on invested</td><td class="ok">62.5×</td><td>42.7×</td></tr>
+    <tr><td>Worst portfolio drawdown</td><td class="ok">−78.3%</td><td>−83.5%</td></tr>
+  </table>
+  <p>Per-cycle accumulation efficiency: in both the 2018–2022 and 2022–2026 four-year windows, each strategy
+  dollar bought <b>~26% more BTC</b> than a plain-DCA dollar (average cost −20% to −21%). The strategy invests
+  more in total by design — extra buying is concentrated in bear markets.</p>
+
+  <h2>What we tested that did NOT work</h2>
+  <p>We consider this section the most important one on the page.</p>
+  <ul>
+    <li><b>Frequent profit-taking destroys value.</b> A four-tranche sell strategy (25% at Mayer 1.4 / 1.65,
+    Pi &gt; 0.70, and a trend-break) backtested at <span class="bad">28.9×</span> vs 46.5× for never selling —
+    worse than plain DCA per dollar. Sell levels low enough to fire in modern cycles also fire mid-rally.</li>
+    <li><b>Indicator dampening is real and accelerating.</b> Cycle-peak Mayer values: 13.1 (2011) → 8.3 (2013) →
+    3.8 (2017) → 2.8 (2021) → 1.85 (2025). The Pi Cycle has not crossed since 2021 and may never cross again.
+    This is why the sell rules are "insurance," not strategy: expected to stay silent.</li>
+    <li><b>All-in reserve deployment failed.</b> A "deploy everything on trend recovery" rule dumped the entire
+    reserve near a local top in Aug 2021. Only gradual, tranche-based redeployment survived testing.</li>
+  </ul>
+
+  <h2>Limitations — read these as carefully as the results</h2>
+  <ul>
+    <li>Bitcoin has completed only ~4 market cycles. Every threshold here is fitted to a <b>tiny sample</b>.</li>
+    <li>The strategy's edge depends on Bitcoin continuing to cycle around a rising long-term trend. If that
+    regime ends — in either direction — no moving average will announce it in advance.</li>
+    <li>Indicator compression means buy zones will also drift: Mayer cycle-lows are rising (0.23 → 0.62). The
+    2× zone may need recalibration around 2030; we review annually.</li>
+    <li>Backtests exclude fees, taxes, slippage, and — most importantly — the psychology of actually buying 3×
+    during a −75% drawdown. The simulated investor never flinches. Real ones do.</li>
+    <li>Historical simulation is not evidence of future performance. It is evidence of past performance only.</li>
+  </ul>
+
+  <h2 id="disclaimer">Disclaimer</h2>
+  <div class="box">
+    <p><b>DCA Compass is an educational and informational tool only.</b> It does not constitute investment
+    advice, financial advice, trading advice, or a recommendation or solicitation to buy or sell any asset. The
+    tool applies a fixed, published, non-personalized rule set to public market data; it knows nothing about your
+    financial situation, objectives, or risk tolerance.</p>
+    <p>Cryptoassets are highly volatile and largely unregulated investments. Their value can fall as fast as it
+    rises, and you can lose the entire amount invested. No investor protection or deposit guarantee scheme
+    applies. Never invest money you cannot afford to lose.</p>
+    <p>All performance figures on this site are hypothetical historical simulations, calculated as described
+    above. They do not represent actual trading, do not account for fees or taxes, and past performance — real
+    or simulated — is no guarantee of future results.</p>
+    <p>Nothing on this site takes your personal circumstances into account. Before making any investment
+    decision, consider seeking advice from a qualified, licensed financial advisor. By using this tool you accept
+    that you alone are responsible for your investment decisions and their outcomes.</p>
+  </div>
+
+  <footer>
+    Questions, corrections, or challenges to the methodology are welcome — that's the point of publishing it.
+  </footer>
+</div>
+</body>
+</html>
