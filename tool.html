@@ -41,6 +41,7 @@
   .rdesc{color:var(--dim);font-size:11.5px;margin-top:1px}
   .rtests{margin-left:auto;text-align:right;font-size:12px;font-variant-numeric:tabular-nums;flex-shrink:0;line-height:1.55}
   .pass{color:var(--green)} .fail{color:var(--dim)}
+  .orb{display:inline-block;font-size:9px;font-weight:800;letter-spacing:.1em;color:var(--blue);border:1px solid var(--blue);border-radius:4px;padding:1px 6px;margin-right:7px;vertical-align:1px}
   .youare{font-size:10px;letter-spacing:.1em;font-weight:700;padding:3px 8px;border-radius:99px;margin-left:12px;color:#0d1117;flex-shrink:0}
   @media(max-width:700px){.rtests{text-align:left;margin-left:0;flex-basis:100%}.rule{flex-wrap:wrap}}
   #err{background:#3d1d1f;border:1px solid var(--red);border-radius:10px;padding:14px;margin-top:18px;display:none}
@@ -253,7 +254,7 @@
       <summary>Strategy rules reference</summary>
       <table>
         <tr><td>Price ≤ 1.05 × 200W SMA</td><td class="ok">DCA 3×</td></tr>
-        <tr><td>Mayer &lt; 0.8</td><td class="ok">DCA 2×</td></tr>
+        <tr><td>Price ≤ 1.15 × 200W SMA <i>or</i> Mayer &lt; 0.8</td><td class="ok">DCA 2×</td></tr>
         <tr><td>Below BMSB and Mayer &lt; 1.2</td><td class="ok">DCA 1.5×</td></tr>
         <tr><td>Neutral</td><td>DCA 1×</td></tr>
         <tr><td>Mayer &gt; 1.40</td><td class="warn">DCA 0.5×</td></tr>
@@ -323,6 +324,7 @@ function computeIndicators(days) {
 }
 function dcaMultiplier(price, m, s200w, bLow) {
   if (price <= 1.05 * s200w) return [3.0, "Price at the 200W SMA — generational accumulation zone"];
+  if (price <= 1.15 * s200w) return [2.0, "Price near the 200W SMA floor — graduated accumulation"];
   if (m < 0.8) return [2.0, "Mayer < 0.8 — accumulation zone"];
   if (m > 1.65) return [0.0, "Mayer > 1.65 — very overheated: DCA paused, hold the cash"];
   if (m > 1.40) return [0.5, "Mayer > 1.40 — overheated: DCA reduced"];
@@ -419,9 +421,11 @@ function render(days, source, fng) {
     { mult: "3×", color: "var(--green)", name: "Price at the 200-week average — the historic cycle floor",
       desc: "Every bear market since 2015 bottomed here. Buy maximum.",
       tests: [[price <= 1.05 * s200w, fmt$(price) + " ≤ " + fmt$(1.05 * s200w) + " (200W SMA +5%)"]] },
-    { mult: "2×", color: "var(--green)", name: "Accumulation zone — price well below its 200-day average",
-      desc: "Mayer below 0.8 means price is 20%+ under its own 200-day average.",
-      tests: [[m < 0.8, mTxt + " < 0.8"]] },
+    { mult: "2×", color: "var(--green)", name: "Accumulation zone — historically cheap territory",
+      desc: "Near the 200-week floor, or deep below the 200-day average. Either one is enough.",
+      any: true,
+      tests: [[price <= 1.15 * s200w, fmt$(price) + " ≤ " + fmt$(1.15 * s200w) + " (200W SMA +15%)"],
+              [m < 0.8, mTxt + " < 0.8"]] },
     { mult: "1.5×", color: "var(--teal)", name: "Dip below the Bull Market Support Band",
       desc: "A pullback under the 20W/21W band while Mayer is still moderate.",
       tests: [[price < bLow, fmt$(price) + " < " + fmt$(bLow) + " (band low)"],
@@ -436,16 +440,17 @@ function render(days, source, fng) {
       desc: "The most expensive buys in 12 years of data happened here.",
       tests: [[m > 1.65, mTxt + " > 1.65"]] },
   ];
-  let activeIdx = rules.findIndex(r => parseFloat(r.mult) === mult);
+  const rulePass = r => r.any ? r.tests.some(t => t[0]) : r.tests.every(t => t[0]);
+  let activeIdx = rules.findIndex(r => parseFloat(r.mult) === mult && rulePass(r));
   $("rules").innerHTML = rules.map((r, idx) => {
     const active = idx === activeIdx;
-    const fullPass = r.tests.every(t => t[0]);
+    const fullPass = rulePass(r);
     const outranked = !active && fullPass;
     return `<div class="rule${active ? " active" : ""}" style="border-left-color:${active ? r.color : "var(--border)"}">
       <div class="chip" style="${active ? "background:" + r.color : ""}">${r.mult}</div>
       <div><div class="rname">${r.name}</div><div class="rdesc">${r.desc}</div></div>
-      <div class="rtests">${r.tests.map(t =>
-        `<div class="${t[0] ? "pass" : "fail"}">${t[0] ? "✓" : "✗"} ${t[1]}</div>`).join("")}
+      <div class="rtests">${r.tests.map((t, ti) =>
+        `<div class="${t[0] ? "pass" : "fail"}">${ti > 0 && r.any ? '<span class="orb">OR</span>' : ""}${t[0] ? "✓" : "✗"} ${t[1]}</div>`).join("")}
         ${outranked ? `<div class="fail">→ also true, but ${rules[activeIdx].mult} wins (higher priority)</div>` : ""}</div>
       ${active ? `<div class="youare" style="background:${r.color}">THIS WEEK</div>` : ""}
     </div>`;
